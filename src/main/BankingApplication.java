@@ -35,12 +35,15 @@ public class BankingApplication {
             4465.55, 5837.99, 6992.38, 143.22,
             828.50, 8943.38
     );
+        // Initialize services
+        private static final  CustomerService customerService = new CustomerService();
+        private static final  BankAccountService bankAccountService = new BankAccountService();
 
     public static void main(String[] args) {
-        // Initialize services
-        CustomerService customerService = new CustomerService();
-        BankAccountService bankAccountService = new BankAccountService();
+        measureThreadExecutionTime();
+    }
 
+    public static void measureThreadExecutionTime() {
         // Initialize sample customers
         List<Customer> customers = initializeCustomers(2); // Example for 2 customers
         addCustomersToService(customers, customerService);

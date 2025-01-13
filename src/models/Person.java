@@ -47,7 +47,7 @@ public class Person {
         System.out.print("Your Answer: ");
         String answer = scanner.nextLine().toLowerCase().trim(); // Normalize the input
 
-        if (securityAnswer.equals(answer)) {
+        if (securityAnswer.equalsIgnoreCase(answer)) {
 //            System.out.print("Answer correct. Enter your new password: ");
             this.password = scanner.nextLine();
 //            System.out.println("Password successfully reset!");
@@ -68,5 +68,21 @@ public class Person {
 
     public String getUsername() {
         return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public int getSecurityQuestionIndex() {
+        return securityQuestionIndex;
+    }
+
+    public String getSecurityAnswer() {
+        return securityAnswer;
     }
 }
