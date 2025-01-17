@@ -5,6 +5,8 @@ import services.BankAccountService;
 import services.CustomerService;
 
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class BankingApplication {
 
@@ -50,7 +52,8 @@ public class BankingApplication {
 
         // Measure total execution time for threads
         long startTime = System.currentTimeMillis(); // Start timestamp
-        performParallelOperations(customerService, bankAccountService);
+//        performParallelOperations(customerService, bankAccountService);
+        performParallelOperationsonthreadpoolexcutor(customerService, bankAccountService);
         long endTime = System.currentTimeMillis(); // End timestamp
 
         System.out.println("Total time taken for thread execution: " + (endTime - startTime) + " milliseconds");
@@ -58,28 +61,122 @@ public class BankingApplication {
         displaySavingsAndSalaryBalances(customers);
     }
 
+    private static void performParallelOperationsonthreadpoolexcutor(
+            CustomerService customerService, BankAccountService bankAccountService) {
+
+        Random random = new Random();
+
+        // Retrieve two customers
+        BankAccount account1 = customerService.getAllCustomers().get(0).getAccounts().get(0);
+        BankAccount account2 = customerService.getAllCustomers().get(1).getAccounts().get(0);
+
+        BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(50); // Task queue
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                10,
+                20,
+                60,
+                TimeUnit.SECONDS,
+                workQueue,
+                new ThreadPoolExecutor.CallerRunsPolicy() // RejectedExecutionHandler
+        );
+
+        List<Future<?>> futures = new ArrayList<>(); // To track all submitted tasks
+
+        int numThreads = 200;
+
+        for (int k = 0; k < numThreads; k++) {
+            int index = k % 50;
+
+            // Deposit Task
+            double depositAmount = RandomDepositValues.get(index); // Using index for deposit values
+            Future<?> depositFuture = executor.submit(() -> {
+                synchronized (account1){
+                    try {
+                        bankAccountService.deposit(account1, depositAmount);
+                        System.out.println(Thread.currentThread().getName() + " - Deposited " + depositAmount + " to " + account1.getAccountType());
+                    } catch (Exception e) {
+                        System.out.println(Thread.currentThread().getName() + " - Error during deposit: " + e.getMessage());
+                    }
+                }
+
+            });
+            futures.add(depositFuture);
+
+            // Withdraw Task
+            double withdrawAmount = RandomWithdrowValues.get(index); // Using index for withdrawal values
+            Future<?> withdrawFuture = executor.submit(() -> {
+                    synchronized (account1){
+                    try {
+                        bankAccountService.withdraw(account1, withdrawAmount);
+                        System.out.println(Thread.currentThread().getName() + " - Withdrawn " + withdrawAmount + " from " + account2.getAccountType());
+                    } catch (Exception e) {
+                        System.out.println(Thread.currentThread().getName() + " - Error during withdrawal: " + e.getMessage());
+                    }
+                }
+            });
+            futures.add(withdrawFuture);
+        }
+
+        // Wait for all tasks to complete
+        for (Future<?> future : futures) {
+            try {
+                future.get(); // Ensures the task is completed
+            } catch (InterruptedException | ExecutionException e) {
+                System.out.println("Error: Task interrupted - " + e.getMessage());
+            }
+        }
+
+        // Shut down the executor
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+        }
+
+        System.out.println("All operations completed.");
+    }
+
+
     private static void performParallelOperations(CustomerService customerService, BankAccountService bankAccountService) {
         Random random = new Random();
 
         // Retrieve all customers
         // List<Customer> customers = customerService.getAllCustomers();
-        // Retrieve two custombers
+        // Retrieve two customers
         BankAccount account1 = customerService.getAllCustomers().get(0).getAccounts().get(0);
         BankAccount account2 = customerService.getAllCustomers().get(1).getAccounts().get(0);
 
         List<Thread> threads = new ArrayList<>(); // List to store all threads
 
+
+
         // For each customer and their accounts, perform deposit and credit in separate threads
         int numThreads = 200;
+        ReentrantLock lock = new ReentrantLock();
+
         for (int k = 0; k < numThreads; k++) {
             int index = k%50;
             // Deposit Task
             double depositAmount = RandomDepositValues.get(index);  // Using k to iterate through the deposit values
             Thread deposit1Thread = new Thread(() -> {
-                synchronized (account1){
+                synchronized (account1) {
                     bankAccountService.deposit(account1, depositAmount);
                     System.out.println(Thread.currentThread().getName() + " - Deposited " + depositAmount + " to " + account1.getAccountType());
                 }
+//                try{
+//                    lock.lock();
+//                    bankAccountService.deposit(account1, depositAmount);
+//                    System.out.println(Thread.currentThread().getName() + " - Deposited " + depositAmount + " to " + account1.getAccountType());
+//                } catch (Exception e) {
+//                    System.out.println(e.getMessage());
+//                }
+//                finally {
+//                    lock.unlock();
+//                }
             });
 
              // withdraw Task

@@ -170,8 +170,11 @@ public class CustomerServiceApplication {
     }
 
     private static void withdrawMoney(Customer customer) {
-        System.out.print("Enter Account Type (e.g., Savings, Salary): ");
-        String accountType = scanner.nextLine();
+        Map<Integer, String> mappingAccountType = new HashMap<>();
+        mappingAccountType.put(0, "Savings");
+        mappingAccountType.put(1, "Salary");
+        System.out.print("Choose 0 for  Savings & 1 for Salary): ");
+        Integer accountTypeIndex = scanner.nextInt();
         System.out.print("Enter Amount to Withdraw: ");
         double amount = scanner.nextDouble();
         scanner.nextLine(); // Consume newline
@@ -182,15 +185,15 @@ public class CustomerServiceApplication {
         }
 
         for (BankAccount account : customer.getAccounts()) {
-            if (account.getAccountType().equalsIgnoreCase(accountType)) {
+            if (account.getAccountType().equalsIgnoreCase(mappingAccountType.get(accountTypeIndex))) {
                 try {
                     // Check for sufficient balance
                     if (account.viewBalance() < amount) {
-                        throw new InsufficientBalanceException("Insufficient balance in " + accountType + " account.");
+                        throw new InsufficientBalanceException("Insufficient balance in " + mappingAccountType.get(accountTypeIndex) + " account.");
                     }
 
                     bankAccountService.withdraw(account, amount);
-                    System.out.println("Withdrawn " + amount + " from " + accountType + " account. New Balance: " + account.viewBalance());
+                    System.out.println("Withdrawn " + amount + " from " + mappingAccountType.get(accountTypeIndex) + " account. New Balance: " + account.viewBalance());
                 } catch (IllegalArgumentException e) {
                     System.out.println("Error: " + e.getMessage());
                 }
