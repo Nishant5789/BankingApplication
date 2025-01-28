@@ -3,8 +3,8 @@ package models;
 import java.util.ArrayList;
 import java.util.List;
 
-    public class BankAccount {
-        private String accountType; // (Savings, Current, Salary)
+public class BankAccount {
+    private String accountType; // (Savings, Current, Salary)
         private double balance;
         private List<String> transactionHistory;
 
@@ -54,24 +54,4 @@ import java.util.List;
                 System.out.println(transaction);
             }
         }
-
-        public void transfer(BankAccount recipientAccount, double amount) {
-            if (amount <= 0) {
-                System.out.println("Invalid amount. Transfer amount must be greater than zero.");
-                return;
-            }
-            if (amount > balance) {
-                System.out.println("Insufficient balance. Transfer failed.");
-                transactionHistory.add("Failed Transfer Attempt: " + amount + " | Available Balance: " + balance);
-                return;
-            }
-            // Deduct from the sender's account
-            balance -= amount;
-            transactionHistory.add("Transferred: " + amount + " to " + recipientAccount.getAccountType() + " Account | New Balance: " + balance);
-
-            // Add to the recipient's account
-            recipientAccount.balance += amount;
-            recipientAccount.transactionHistory.add("Received: " + amount + " from " + accountType + " Account | New Balance: " + recipientAccount.balance);
-
-        }
-    }
+}

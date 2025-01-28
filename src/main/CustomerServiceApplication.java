@@ -17,6 +17,10 @@ public class CustomerServiceApplication {
     private static final CustomerService customerService = new CustomerService();
     private static final BankAccountService bankAccountService = new BankAccountService();
 
+    static {
+        bankAccountService.handleTransferMoney();
+    }
+
     public static void main(String[] args) {
         System.out.println("Welcome to the Banking System!");
         seedSampleData();
@@ -210,17 +214,8 @@ public class CustomerServiceApplication {
         double amount = scanner.nextDouble();
         scanner.nextLine(); // Consume newline
 
-        Customer recipient = customerService.getCustomerByAccountNumber(recipientAccountNumber);
-        if (recipient == null) {
-            System.out.println("Recipient account not found.");
-            return;
-        }
-
-        BankAccount senderAccount = customer.getAccounts().get(0); // Assuming single account
-        BankAccount recipientAccount = recipient.getAccounts().get(0); // Assuming single account
-
         try {
-            senderAccount.transfer(recipientAccount, amount);
+            bankAccountService.transferMoney(customer.getAccountNumber(), recipientAccountNumber, amount);
             System.out.println("Transferred " + amount + " to account " + recipientAccountNumber);
         } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());

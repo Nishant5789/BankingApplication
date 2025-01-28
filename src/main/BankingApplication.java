@@ -83,7 +83,7 @@ public class BankingApplication {
 
         List<Future<?>> futures = new ArrayList<>(); // To track all submitted tasks
 
-        int numThreads = 200;
+        int numThreads = 20000;
 
         for (int k = 0; k < numThreads; k++) {
             int index = k % 50;
@@ -99,7 +99,6 @@ public class BankingApplication {
                         System.out.println(Thread.currentThread().getName() + " - Error during deposit: " + e.getMessage());
                     }
                 }
-
             });
             futures.add(depositFuture);
 
