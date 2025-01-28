@@ -52,8 +52,8 @@ public class BankingApplication {
 
         // Measure total execution time for threads
         long startTime = System.currentTimeMillis(); // Start timestamp
-//        performParallelOperations(customerService, bankAccountService);
-        performParallelOperationsonthreadpoolexcutor(customerService, bankAccountService);
+        performParallelOperations(customerService, bankAccountService);
+//        performParallelOperationsonthreadpoolexcutor(customerService, bankAccountService);
         long endTime = System.currentTimeMillis(); // End timestamp
 
         System.out.println("Total time taken for thread execution: " + (endTime - startTime) + " milliseconds");
@@ -83,7 +83,7 @@ public class BankingApplication {
 
         List<Future<?>> futures = new ArrayList<>(); // To track all submitted tasks
 
-        int numThreads = 20000;
+        int numThreads = 200;
 
         for (int k = 0; k < numThreads; k++) {
             int index = k % 50;

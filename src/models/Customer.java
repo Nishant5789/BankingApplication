@@ -32,21 +32,12 @@ public class Customer extends Person{
         this.address = address;
     }
 
-    // Getter and Setter for Accounts
     public List<BankAccount> getAccounts() {
         return accounts;
     }
 
-    public void setAccounts(List<BankAccount> accounts) {
-        this.accounts = accounts;
-    }
-
     public void addBankAccount(BankAccount account) {
         accounts.add(account);
-    }
-
-    public void removeBankAccount(BankAccount account) {
-        accounts.remove(account);
     }
 
     public void displayAccounts() {

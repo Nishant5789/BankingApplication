@@ -10,7 +10,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class BankAccountService {
-    private static final CustomerService customerService = new CustomerService();
+    private CustomerService customerService = new CustomerService();
     private static final String ZMQ_ADDRESS = "tcp://localhost:5555";
     private static ThreadPoolExecutor executor;
 
@@ -26,8 +26,7 @@ public class BankAccountService {
 
     public void deposit(BankAccount account, double amount) {
         if (amount <= 0) {
-            System.out.println("Deposit amount must be greater than zero.");
-            return;
+            throw new IllegalArgumentException("Withdrawal amount must be greater than zero.");
         }
         account.deposit(amount);
     }
@@ -54,33 +53,23 @@ public class BankAccountService {
         executor.execute(() -> {
             try (ZContext context = new ZContext()) {
                 ZMQ.Socket requester = context.createSocket(ZMQ.REQ);
-                ZMQ.Poller poller = context.createPoller(1);
-                poller.register(requester, ZMQ.Poller.POLLIN);
 
                 requester.connect(ZMQ_ADDRESS);
 
                 String request = String.format("%s|%s|%f", senderAccountNumber, recipientAccountNumber, amount);
                 requester.send(request);
 
-                // Poll for a response with a 5-second timeout
-                int events = poller.poll(5000);
-
-                if (events>0 && poller.pollin(0)) {
-                    String response = requester.recvStr();
-                    if ("SUCCESS".equals(response)) {
-                            BankAccount senderAccount = customerService.getCustomerByAccountNumber(senderAccountNumber).getAccounts().get(0);
-                        if (senderAccount != null) {
+                String response = requester.recvStr();
+                if ("SUCCESS".equals(response)) {
+                    BankAccount senderAccount = customerService.getCustomerByAccountNumber(senderAccountNumber).getAccounts().get(0);
+                    if (senderAccount != null) {
                             senderAccount.withdraw(amount);
-                        }
-                        System.out.println("Transfer completed successfully.");
-                    } else {
-                        System.out.println("Transfer failed: " + response);
                     }
-                } else {
-                    System.out.println("Error: Timeout while waiting for response.");
+                    System.out.println("Transfer completed successfully.");
                 }
-            } catch (Exception e) {
-                System.out.println("Error: Unable to reach the server.");
+                else {
+                    System.out.println("Transfer failed: " + response);
+                }
             }
         });
     }
@@ -89,7 +78,7 @@ public class BankAccountService {
         executor.execute(() -> {
             try (ZContext context = new ZContext()) {
                 ZMQ.Socket responder = context.createSocket(ZMQ.REP);
-                responder.bind(ZMQ_ADDRESS);
+                responder.bind("tcp://*:5556");
 
                 while (!Thread.currentThread().isInterrupted()) {
                     String request = responder.recvStr();

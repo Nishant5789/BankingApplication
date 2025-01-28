@@ -10,11 +10,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CustomerService {
-    private Map<String, Customer> customerMap; // Map to store customers by account number
+    private static Map<String, Customer>  customerMap = new ConcurrentHashMap<>();; // Map to store customers by account number
 
-    public CustomerService() {
-        customerMap = new ConcurrentHashMap<>();
-    }
     // Add a new customer
     public void addCustomer(Customer customer) {
         if (customerMap.containsKey(customer.getAccountNumber())) {
