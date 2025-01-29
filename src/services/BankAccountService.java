@@ -1,17 +1,19 @@
 package services;
 
 import models.BankAccount;
-import models.Customer;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class BankAccountService {
     private CustomerService customerService = new CustomerService();
     private static final String ZMQ_ADDRESS = "tcp://localhost:5555";
+    private static final Map<String, String> responseMap = new ConcurrentHashMap<>();
     private static ThreadPoolExecutor executor;
 
     static {
@@ -52,18 +54,20 @@ public class BankAccountService {
     public  void transferMoney(String senderAccountNumber, String recipientAccountNumber, double amount) {
         executor.execute(() -> {
             try (ZContext context = new ZContext()) {
-                ZMQ.Socket requester = context.createSocket(ZMQ.REQ);
+                ZMQ.Socket dealer = context.createSocket(ZMQ.DEALER);
+                dealer.setIdentity(senderAccountNumber.getBytes());
+                dealer.connect(ZMQ_ADDRESS);
 
-                requester.connect(ZMQ_ADDRESS);
+                String request = senderAccountNumber + "|" + recipientAccountNumber + "|" + amount;
+                dealer.send(request);
+                responseMap.put(senderAccountNumber, request);
 
-                String request = String.format("%s|%s|%f", senderAccountNumber, recipientAccountNumber, amount);
-                requester.send(request);
-
-                String response = requester.recvStr();
+                String response = dealer.recvStr();
                 if ("SUCCESS".equals(response)) {
                     BankAccount senderAccount = customerService.getCustomerByAccountNumber(senderAccountNumber).getAccounts().get(0);
                     if (senderAccount != null) {
-                            senderAccount.withdraw(amount);
+                        senderAccount.withdraw(amount);
+                        responseMap.remove(senderAccount);
                     }
                     System.out.println("Transfer completed successfully.");
                 }
@@ -77,7 +81,7 @@ public class BankAccountService {
     public  void handleTransferMoney() {
         executor.execute(() -> {
             try (ZContext context = new ZContext()) {
-                ZMQ.Socket responder = context.createSocket(ZMQ.REP);
+                ZMQ.Socket responder = context.createSocket(ZMQ.DEALER);
                 responder.bind("tcp://*:5556");
 
                 while (!Thread.currentThread().isInterrupted()) {
@@ -90,7 +94,6 @@ public class BankAccountService {
                     double amount = Double.parseDouble(parts[2]);
 
                     BankAccount recipientAccountObj = customerService.getCustomerByAccountNumber(recipientAccount).getAccounts().get(0);
-
                     if (recipientAccountObj != null) {
                         recipientAccountObj.deposit(amount);
                         responder.send("SUCCESS");
@@ -103,6 +106,4 @@ public class BankAccountService {
             }
         });
     }
-
-
 }

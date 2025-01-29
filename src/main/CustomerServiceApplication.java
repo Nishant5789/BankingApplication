@@ -225,7 +225,7 @@ public class CustomerServiceApplication {
     private static void viewTransactionHistory(Customer customer) {
         for (BankAccount account : customer.getAccounts()) {
             System.out.println("Transaction history for " + account.getAccountType() + " account:");
-//            account.viewTransactionHistory();
+            account.viewTransactionHistory();
         }
     }
 
