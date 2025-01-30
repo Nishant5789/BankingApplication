@@ -4,53 +4,29 @@ import models.BankAccount;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
-import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.Date;
 
-public class BankAccountService {
+public class BankAccountService extends AbstractBankService {
     private CustomerService customerService = new CustomerService();
-    private static final String ZMQ_ADDRESS = "tcp://localhost:5555";
-    private static final Map<String, String> responseMap = new ConcurrentHashMap<>();
-    private static ThreadPoolExecutor executor;
 
-    static {
-        executor = new ThreadPoolExecutor(
-                2, // Core threads
-                4, // Max threads
-                60, TimeUnit.SECONDS, // Thread idle timeout
-                new ArrayBlockingQueue<>(5), // Queue capacity
-                new ThreadPoolExecutor.CallerRunsPolicy() // Custom rejection policy
-        );
-    }
-
+    @Override
     public void deposit(BankAccount account, double amount) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Withdrawal amount must be greater than zero.");
-        }
         account.deposit(amount);
+        account.getTransactionHistory().add(amount + " is deposit at" + new Date());
     }
 
+    @Override
     public void withdraw(BankAccount account, double amount) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Withdrawal amount must be greater than zero.");
-        }
-        if (amount > account.viewBalance()) {
-            throw new IllegalArgumentException("Insufficient balance for withdrawal.");
-        }
         account.withdraw(amount);
+        account.getTransactionHistory().add(amount + " is withdraw at" + new Date());
     }
 
-    public double getBalance(BankAccount account) {
-        return account.viewBalance();
-    }
-
+    @Override
     public void viewTransactionHistory(BankAccount account) {
         account.viewTransactionHistory();
     }
 
+    @Override
     public  void transferMoney(String senderAccountNumber, String recipientAccountNumber, double amount) {
         executor.execute(() -> {
             try (ZContext context = new ZContext()) {
@@ -67,6 +43,7 @@ public class BankAccountService {
                     BankAccount senderAccount = customerService.getCustomerByAccountNumber(senderAccountNumber).getAccounts().get(0);
                     if (senderAccount != null) {
                         senderAccount.withdraw(amount);
+                        senderAccount.getTransactionHistory().add(amount+" transfer to acc - " + recipientAccountNumber);
                         responseMap.remove(senderAccount);
                     }
                     System.out.println("Transfer completed successfully.");
@@ -78,6 +55,7 @@ public class BankAccountService {
         });
     }
 
+    @Override
     public  void handleTransferMoney() {
         executor.execute(() -> {
             try (ZContext context = new ZContext()) {
@@ -96,6 +74,7 @@ public class BankAccountService {
                     BankAccount recipientAccountObj = customerService.getCustomerByAccountNumber(recipientAccount).getAccounts().get(0);
                     if (recipientAccountObj != null) {
                         recipientAccountObj.deposit(amount);
+                        recipientAccountObj.getTransactionHistory().add(amount+" transfer from acc - " + senderAccount);
                         responder.send("SUCCESS");
                     } else {
                         responder.send("ERROR: Recipient account not found.");

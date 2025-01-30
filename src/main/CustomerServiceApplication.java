@@ -1,7 +1,5 @@
 package main;
 
-import exceptions.AmountIsValidException;
-import exceptions.InsufficientBalanceException;
 import models.BankAccount;
 import models.Customer;
 import services.BankAccountService;
@@ -16,9 +14,12 @@ public class CustomerServiceApplication {
     private static final Scanner scanner = new Scanner(System.in);
     private static final CustomerService customerService = new CustomerService();
     private static final BankAccountService bankAccountService = new BankAccountService();
+    private static final Map<Integer, String> mappingAccountType = new HashMap<>();
 
     static {
         bankAccountService.handleTransferMoney();
+        mappingAccountType.put(0, "Savings");
+        mappingAccountType.put(1, "Salary");
     }
 
     public static void main(String[] args) {
@@ -83,7 +84,6 @@ public class CustomerServiceApplication {
                 System.out.println("Answer the security question to reset your password:");
                 System.out.println("Question: " + getSecurityQuestion(customer.getSecurityQuestionIndex()));
                 System.out.print("Answer: ");
-//                System.out.println(customer.getSecurityAnswer());
                 String answer = scanner.nextLine();
                 if (answer.equals(customer.getSecurityAnswer())) {
                     System.out.print("Enter New Password: ");
@@ -148,20 +148,21 @@ public class CustomerServiceApplication {
     }
 
     private static void depositMoney(Customer customer) {
-        Map<Integer, String> mappingAccountType = new HashMap<>();
-        mappingAccountType.put(0, "Savings");
-        mappingAccountType.put(1, "Salary");
         System.out.print("Choose 0 for  Savings & 1 for Salary): ");
         Integer accountTypeIndex = scanner.nextInt();
+        if (accountTypeIndex != 0 && accountTypeIndex != 1) {
+            System.out.println("Invalid input you choose input should be 0 or 1");
+            return;
+        }
         System.out.print("Enter Amount to Deposit: ");
         double amount = scanner.nextDouble();
         scanner.nextLine(); // Consume newline
 
         // Validate the deposit amount
         if (amount <= 0) {
-            throw new AmountIsValidException("Deposit amount must be greater than zero.");
+            System.out.println("Invalid amount. deposit amount must be greater than zero.");
+            return;
         }
-
 
         for (BankAccount account : customer.getAccounts()) {
             if (account.getAccountType().equalsIgnoreCase(mappingAccountType.get(accountTypeIndex))){
@@ -174,34 +175,31 @@ public class CustomerServiceApplication {
     }
 
     private static void withdrawMoney(Customer customer) {
-        Map<Integer, String> mappingAccountType = new HashMap<>();
-        mappingAccountType.put(0, "Savings");
-        mappingAccountType.put(1, "Salary");
         System.out.print("Choose 0 for  Savings & 1 for Salary): ");
         Integer accountTypeIndex = scanner.nextInt();
+        if (accountTypeIndex != 0 && accountTypeIndex != 1) {
+            System.out.println("Invalid input you choose input should be 0 or 1");
+            return;
+        }
         System.out.print("Enter Amount to Withdraw: ");
         double amount = scanner.nextDouble();
         scanner.nextLine(); // Consume newline
 
-        // Validate the deposit amount
+        // Validate the withdraw amount
         if (amount <= 0) {
-            throw new AmountIsValidException("withdraw amount must be greater than zero.");
+            System.out.println("Invalid amount. withdraw amount must be greater than zero.");
+            return;
         }
 
         for (BankAccount account : customer.getAccounts()) {
             if (account.getAccountType().equalsIgnoreCase(mappingAccountType.get(accountTypeIndex))) {
-                try {
                     // Check for sufficient balance
                     if (account.viewBalance() < amount) {
-                        throw new InsufficientBalanceException("Insufficient balance in " + mappingAccountType.get(accountTypeIndex) + " account.");
-                    }
-
+                        System.out.println("Insufficient balance in " + mappingAccountType.get(accountTypeIndex) + " account.");
+                        return;
+                   }
                     bankAccountService.withdraw(account, amount);
                     System.out.println("Withdrawn " + amount + " from " + mappingAccountType.get(accountTypeIndex) + " account. New Balance: " + account.viewBalance());
-                } catch (IllegalArgumentException e) {
-                    System.out.println("Error: " + e.getMessage());
-                }
-                return;
             }
         }
         System.out.println("Account type not found.");
@@ -213,13 +211,8 @@ public class CustomerServiceApplication {
         System.out.print("Enter Amount to Transfer: ");
         double amount = scanner.nextDouble();
         scanner.nextLine(); // Consume newline
-
-        try {
-            bankAccountService.transferMoney(customer.getAccountNumber(), recipientAccountNumber, amount);
-            System.out.println("Transferred " + amount + " to account " + recipientAccountNumber);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        bankAccountService.transferMoney(customer.getAccountNumber(), recipientAccountNumber, amount);
+        System.out.println("Transferred " + amount + " to account " + recipientAccountNumber);
     }
 
     private static void viewTransactionHistory(Customer customer) {
@@ -232,7 +225,7 @@ public class CustomerServiceApplication {
     private static void seedSampleData() {
         // Seed sample customers and accounts
         Customer customer1 = new Customer("Nishant", "C001", "nishant1", "nishant123", 0, "Fluffy",
-                "123456", "123 Main St", List.of(new BankAccount("Savings", 1000.0)));
+                "123456", "123 Main St", List.of(new BankAccount("Savings", 1000.0), new BankAccount("Salary", 1000.0)));
         Customer customer2 = new Customer("Dhruv", "C002", "dhruv1", "dhruv123", 1, "Blue",
                 "654321", "456 Elm St", List.of(new BankAccount("Savings", 2000.0)));
         customerService.addCustomer(customer1);

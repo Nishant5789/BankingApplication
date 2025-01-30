@@ -5,6 +5,15 @@ import java.util.List;
 public class Customer extends Person{
     private String accountNumber;
     private String address;
+    protected String username;
+    private String password; // Storing password as String
+    private String[] securityQuestions = {
+            "What's your first watch movie?",
+            "Who's your favorite sportsperson?",
+            "What's your hobby?"
+    };
+    private int securityQuestionIndex; // Stores the chosen question index
+    private String securityAnswer; // Stores the answer (lowercased for case-insensitivity)
     private List<BankAccount> accounts;
 
     public Customer(String name, String id, String username, String password,
@@ -13,31 +22,46 @@ public class Customer extends Person{
         super(name, id, username, password, securityQuestionIndex, securityAnswer);
         this.accountNumber = accountNumber;
         this.address = address;
+        this.username = username;
+        this.password = password; // Storing password as String
+        this.securityQuestionIndex = securityQuestionIndex;
+        this.securityAnswer = securityAnswer.toLowerCase().trim(); // Normalize the answer for comparison
         this.accounts = accounts;
     }
 
-    public String getAccountNumber() {
-        return accountNumber;
+    public String getName() {
+        return this.name;
     }
 
-    public void setAccountNumber(String accountNumber) {
-        this.accountNumber = accountNumber;
+    public Object getUsername() {
+        return this.username;
     }
 
-    public String getAddress() {
-        return address;
+    public int getSecurityQuestionIndex() {
+        return this.securityQuestionIndex;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public String getSecurityAnswer() {
+        return this.securityAnswer;
+    }
+
+    public Object getPassword() {
+        return this.password;
+    }
+    public void setPassword(String newPassword) {
+        this.password=newPassword;
     }
 
     public List<BankAccount> getAccounts() {
         return accounts;
     }
 
-    public void addBankAccount(BankAccount account) {
-        accounts.add(account);
+    public String getAccountNumber() {
+        return  this.accountNumber;
+    }
+
+    public void addBankAccount(BankAccount bankAccount) {
+        this.accounts.add(bankAccount);
     }
 
     public void displayAccounts() {
@@ -50,5 +74,4 @@ public class Customer extends Person{
             }
         }
     }
-
 }

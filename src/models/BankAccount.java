@@ -2,13 +2,13 @@ package models;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public class BankAccount {
     private String accountType; // (Savings, Current, Salary)
     private double balance;
     private List<String> transactionHistory;
-
 
     public BankAccount(String accountType, double initialBalance) {
         this.accountType = accountType;
@@ -36,11 +36,12 @@ public class BankAccount {
     }
 
     public void viewTransactionHistory() {
-        System.out.println("Transaction History for " + accountType + " Account:");
         for (String transaction : transactionHistory) {
             System.out.println(transaction);
         }
     }
 
-
+    public List<String> getTransactionHistory() {
+        return transactionHistory;
+    }
 }
